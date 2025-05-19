@@ -32,12 +32,12 @@ const formSchema = z.object({
   }),
 });
 
-type Data = {
+interface Data {
   id: number;
   title: string;
   description: string;
-  date: number;
-};
+  date: string;
+}
 
 type Props = {
   data: Data;

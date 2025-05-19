@@ -1,9 +1,9 @@
 "use client";
 
-import React, { useState } from "react";
+import React from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
-import { date, z } from "zod";
+import { z } from "zod";
 
 import { Button } from "@/components/ui/button";
 import {
@@ -33,11 +33,10 @@ type Task = {
 };
 
 interface Props {
-  tasks: Task[];
   onSuccess: () => void;
 }
 
-const NewTaskCard: React.FC<Props> = ({ tasks, onSuccess }) => {
+const NewTaskCard: React.FC<Props> = ({ onSuccess }) => {
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {

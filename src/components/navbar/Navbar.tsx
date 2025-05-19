@@ -1,6 +1,6 @@
 import React from "react";
 import Logo from "../logo/Logo";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
 import ProfileDropDown from "../dashboard/ProfileDropDown";
 
 const Navbar = () => {

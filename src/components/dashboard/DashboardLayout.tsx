@@ -3,7 +3,7 @@ import React, { useEffect, useState } from "react";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { CiSearch } from "react-icons/ci";
 
-import { addDays, format } from "date-fns";
+import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
 import { cn } from "@/lib/utils";
@@ -11,9 +11,13 @@ import { Button } from "@/components/ui/button";
 import { Calendar } from "@/components/ui/calendar";
 import TaskCard from "./TaskCard";
 import ProfileDropDown from "./ProfileDropDown";
-import { Popover, PopoverContent, PopoverTrigger } from "../ui/popover";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import NewTaskCard from "./NewTaskCard";
-import { Input } from "../ui/input";
+
 import { DateRange } from "react-day-picker";
 import { Skeleton } from "../ui/skeleton";
 
@@ -196,9 +200,7 @@ const DashboardLayout = ({
 
       <div className=" bg-silver rounded-sm md:px-4 px-5 pt-6 grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 pb-4">
         {/* Card */}
-        {showNewTaskCard && (
-          <NewTaskCard onSuccess={handleSuccess} tasks={tasks} />
-        )}
+        {showNewTaskCard && <NewTaskCard onSuccess={handleSuccess} />}
         {isLoading ? (
           Array.from({ length: 6 }).map((_, index) => (
             <div
