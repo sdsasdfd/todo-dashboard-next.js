@@ -40,12 +40,18 @@ const DashboardLayout = ({
 
   const fetchTasks = () => {
     const tasks = localStorage.getItem("tasks");
-    if (tasks) {
-      const formattedTasks = JSON.parse(tasks);
-      setTasks(formattedTasks);
-      setFilterTasks(formattedTasks);
+    try {
+      if (tasks) {
+        const formattedTasks = JSON.parse(tasks);
+        setTasks(formattedTasks);
+        setFilterTasks(formattedTasks);
+
+        console.log("in fetch function");
+      }
+    } catch {
+      console.log("Something went wrong during fetch tasks!");
+    } finally {
       setIsLoading(false);
-      console.log("in fetch function");
     }
   };
 
