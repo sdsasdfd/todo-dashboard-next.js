@@ -48,7 +48,7 @@ const ProfileDropDown = () => {
     };
     getUser();
   }, []);
-  console.log(user);
+  // console.log(user);
 
   const handleLogout = async () => {
     try {

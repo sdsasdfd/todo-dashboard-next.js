@@ -1,14 +1,23 @@
 import { NextRequest, NextResponse } from "next/server";
 import { createClient } from "@/utils/supabase/server";
 
+
+
 // type Task = {
 //   title: string;
 //   description: string;
 // };
 
-export const GET = async () => {
+export const GET = async (req: NextRequest) => {
   const supabase = await createClient();
 
+  const { searchParams } = new URL(req.url);
+
+  const search = searchParams.get("search");
+  const from = searchParams.get("from");
+  const to = searchParams.get("to");
+
+  console.log("search params ::", search);
   // lets check user is logged in or not
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
@@ -21,14 +30,27 @@ export const GET = async () => {
 
   const userId = userData.user.id;
 
-  const { data, error } = await supabase
-    .from("tasks")
-    .select("*")
+  let query =  supabase.from('tasks').select("*")
     .order("created_at", { ascending: false })
     .eq("user_id", userId);
 
-  console.log("tasks ::", data);
-  console.log("supabase error ::", error);
+   if (search && search.trim() !== "") {
+    query = query.ilike("title", `%${search.trim()}%`);
+  }
+
+   if (from) {
+    query = query.gte("created_at", new Date(from).toISOString());
+  }
+
+  if (to) {
+    const toDate = new Date(to);
+  toDate.setHours(23, 59, 59, 999); 
+    query = query.lte("created_at", toDate.toISOString());
+  }
+    
+const {data, error} = await query;
+  // console.log("tasks ::", data);
+  // console.log("supabase error ::", error);
 
   if (error) {
     return NextResponse.json(
@@ -46,7 +68,7 @@ export const POST = async (req: NextRequest) => {
   // lets check user is logged in or not
   const { data: userData, error: userError } = await supabase.auth.getUser();
 
-  console.log("userData ::", userData.user);
+  // console.log("userData ::", userData.user);
 
   if (userError || !userData?.user) {
     return NextResponse.json(
@@ -66,13 +88,15 @@ export const POST = async (req: NextRequest) => {
   }
 
   const userId = userData.user.id;
-  console.log("userId ::", userId);
+  // console.log("userId ::", userId);
 
   const payload = {
     title,
     description,
     user_id: userId,
   };
+
+  // console.log("payload ::", payload);
 
   const { data, error } = await supabase.from("tasks").insert(payload).select();
 

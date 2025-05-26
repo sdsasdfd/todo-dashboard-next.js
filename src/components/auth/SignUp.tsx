@@ -16,6 +16,7 @@ import Logo from "../logo/Logo";
 import axios, { AxiosError } from "axios";
 import { toast } from "sonner";
 import { Loader } from "lucide-react";
+import { signInWithGoogle } from "@/actions/auth";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -72,6 +73,9 @@ const Signup = () => {
       setIsLoading(false);
     }
   };
+  const handleGoogleLogin = async () => {
+    await signInWithGoogle()
+  }
   return (
     <div className="container mx-auto h-full flex justify-center">
       <div className="md:bg-silver  mt-16 mb-6 px-10 py-6 md:rounded-sm md:border-1 md:border-medium-silver ">
@@ -214,7 +218,7 @@ const Signup = () => {
             <Button
               className="bg-white w-full border-1 border-medium-silver"
               variant="outline"
-              type="button"
+              type="button" onClick={handleGoogleLogin}
             >
               <div className="size-5 mb-1">
                 <Image

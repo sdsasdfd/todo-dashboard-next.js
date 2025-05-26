@@ -15,6 +15,7 @@ import Logo from "../logo/Logo";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { Loader } from "lucide-react";
+import { signInWithGoogle } from "@/actions/auth";
 
 const formSchema = z.object({
   email: z.string().email("Invalid Email"),
@@ -58,6 +59,10 @@ const Login = () => {
       setIsLoading(false);
     }
   };
+
+  const handleGoogleLogin= async()=> {
+    await signInWithGoogle()
+  }
   return (
     <div className="container mx-auto h-full flex justify-center px-4">
       <div className="md:bg-silver mt-16 mb-6 px-10 py-6 md:rounded-sm md:border-1 md:border-medium-silver">
@@ -149,9 +154,9 @@ const Login = () => {
             <Button
               className="bg-white w-full border-1 border-medium-silver"
               variant="outline"
-              type="button"
+              type="button" onClick={handleGoogleLogin}
             >
-              <div className="size-5 mb-1">
+              <div className="size-5 mb-1" >
                 <Image
                   width={500}
                   height={500}

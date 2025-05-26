@@ -21,6 +21,8 @@ import NewTaskCard from "./NewTaskCard";
 import { DateRange } from "react-day-picker";
 import { Skeleton } from "../ui/skeleton";
 
+import { toast } from "sonner";
+
 
 interface Task {
   id: number;
@@ -31,9 +33,14 @@ interface Task {
   is_completed: boolean;
 }
 
+interface User{
+  id: number
+}
+
 const DashboardLayout = ({
   className,
 }: React.HTMLAttributes<HTMLDivElement>) => {
+  const [userData, setUserData] = useState<User | null>(null)
   const [date, setDate] = useState<DateRange | undefined>();
   const [searchValue, setSearchValue] = useState("");
   const [showNewTaskCard, setShowNewTaskCard] = useState(false);
@@ -41,11 +48,27 @@ const DashboardLayout = ({
   const [filterTasks, setFilterTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
+  const getUserData = async()=> {
+    try {
+      const res = await axios.get("/api/user");
+      if(res.data.user){
+        setUserData(res.data.user);
+      }
+    } catch (error) {
+      console.error("Error fetching user data:", error);
+    }
+  }
+
+  useEffect(()=> {
+getUserData()
+  },[])
+
 
   const fetchTasks = async () => {
+    
     setIsLoading(true);
     try {
-      const res = await axios.get("/api/task");
+      const res = await axios.get("/api/task" );
       console.log("res of tasks ::", res.data);
       setFilterTasks(res.data);
       setTasks(res.data);
@@ -62,7 +85,6 @@ const DashboardLayout = ({
   useEffect(() => {
     console.log("use Effect run for fetch tasks.....");
     fetchTasks();
-    // fetchDBTasks();
   }, []);
 
   const handleSuccess = () => {
@@ -71,14 +93,17 @@ const DashboardLayout = ({
     setShowNewTaskCard(false);
   };
 
-  const handleSearch = (searchQuery: string) => {
-    if (searchQuery) {
-      const finalSearchValue = searchQuery.trim().toLowerCase();
-      const filterTask = tasks.filter((task) => {
-        return task.title.toLocaleLowerCase().includes(finalSearchValue);
-      });
-      console.log("fitler", filterTask);
-      setFilterTasks(filterTask);
+  const handleSearch = async(searchQuery: string) => {
+    console.log("searchQuery", searchQuery);
+    if(searchQuery && searchQuery.trim() !== "") {
+      const res = await axios.get(`/api/task?search=${searchQuery}`);
+    // if (searchQuery) {
+    //   const finalSearchValue = searchQuery.trim().toLowerCase();
+    //   const filterTask = tasks.filter((task) => {
+    //     return task.title.toLocaleLowerCase().includes(finalSearchValue);
+    //   });
+    //   console.log("fitler", filterTask);
+      setFilterTasks(res.data);
     } else {
       setFilterTasks(tasks);
     }
@@ -96,37 +121,61 @@ const DashboardLayout = ({
   }, [searchValue]);
 
   // Filter tasks by selected date range
-  const filterTasksByDateRange = (range: DateRange | undefined) => {
+  const filterTasksByDateRange = async(range: DateRange | undefined) => {
     console.log("date now");
-    if (!range?.from) {
-      console.log("!range?.from.....");
-      // If no from date, show all tasks
-      setFilterTasks(tasks);
+    console.log("range::", range?.from?.toISOString(), "to::", range?.to?.toISOString()); 
+    try {
+   if(range?.from && range?.to){
 
-      return;
+     const res = await axios.get(`/api/task?from=${range?.from?.toISOString()}&to=${range?.to?.toISOString()}`);
+     setFilterTasks(res.data);
+   }else{
+    toast.info("Please select end date")
+   }
+   
+    } catch (error) {
+      console.error("Error filtering tasks by date range:", error);
     }
-    const fromTime = range.from.getTime();
-    const toTime = range.to ? range.to.getTime() : fromTime;
+    
+    // if (!range?.from) {
+    //   const response = await axios.get('/api/filter-task', {
+    //   params: {
+    //     from: new Date(0).toISOString(), // Start from Unix epoch
+    //     to: new Date().toISOString(),
+    //     userId,
+    //   },
+    // });
 
-    const filtered = tasks.filter((task) => {
-      // Convert task.date string to Date
-      const taskDate = new Date(task.created_at);
-      const taskTime = taskDate.getTime();
-      return taskTime >= fromTime && taskTime <= toTime;
-    });
-    console.log("in date function");
-    setFilterTasks(filtered);
+    // setFilterTasks(response.data.tasks);
+    // return;
+    // }
+    // const fromTime = range.from.getTime();
+    // const toTime = range.to ? range.to.getTime() : fromTime;
+    // console.log("fromTime::", fromTime, "toTime::", toTime);
+    // const from = range.from.toISOString();
+    // const to = range.to?.toISOString()
+    // const response = await axios.get("/api/filter-task", {params: {userId, from, to}})
+    // const filtered = tasks.filter((task) => {
+    //   // Convert task.date string to Date
+    //   const taskDate = new Date(task.created_at);
+    //   const taskTime = taskDate.getTime();
+    //   console.log("taskTime::", taskTime, "taskDate::", taskDate);
+    //   return taskTime >= fromTime && taskTime <= toTime;
+    // });
+    // console.log("in date function");
+    // setFilterTasks(response.data.tasks);
   };
 
   // Updated onSelect handler to set date and filter tasks
   const handleDateSelect = (range: DateRange | undefined) => {
     setDate(range);
     console.log("handle Date select function...");
+    // if(!userData?.id) return
     filterTasksByDateRange(range);
   };
 
-  // console.log("filterTasks", filterTasks);
-  // console.log("tasks", tasks);
+  console.log("filterTasks", filterTasks);
+  console.log("tasks", tasks);
 
   return (
     <div className=" bg-white pt-6  min-h-screen w-full md:rounded-t-md md:px-4 lg:px-6 px-2">
@@ -155,7 +204,7 @@ const DashboardLayout = ({
               value={searchValue}
             />
             <CiSearch
-              className=" size-6"
+              className=" size-6 cursor-pointer text-dark-blue"
               onClick={() => handleSearch(searchValue)}
             />
           </div>
