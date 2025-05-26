@@ -69,7 +69,7 @@ getUserData()
     setIsLoading(true);
     try {
       const res = await axios.get("/api/task" );
-      console.log("res of tasks ::", res.data);
+      console.log("res of tasks from the database ::", res.data);
       setFilterTasks(res.data);
       setTasks(res.data);
       console.log("loaded from back", res.data);
