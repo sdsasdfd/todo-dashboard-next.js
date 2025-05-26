@@ -2,7 +2,7 @@
 import React, { useEffect, useState } from "react";
 import { IoIosAddCircleOutline } from "react-icons/io";
 import { CiSearch } from "react-icons/ci";
-
+import axios from "axios";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 
@@ -21,11 +21,14 @@ import NewTaskCard from "./NewTaskCard";
 import { DateRange } from "react-day-picker";
 import { Skeleton } from "../ui/skeleton";
 
+
 interface Task {
   id: number;
   title: string;
   description: string;
-  date: string;
+  created_at: string;
+
+  is_completed: boolean;
 }
 
 const DashboardLayout = ({
@@ -38,16 +41,15 @@ const DashboardLayout = ({
   const [filterTasks, setFilterTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(true);
 
-  const fetchTasks = () => {
-    const tasks = localStorage.getItem("tasks");
-    try {
-      if (tasks) {
-        const formattedTasks = JSON.parse(tasks);
-        setTasks(formattedTasks);
-        setFilterTasks(formattedTasks);
 
-        console.log("in fetch function");
-      }
+  const fetchTasks = async () => {
+    setIsLoading(true);
+    try {
+      const res = await axios.get("/api/task");
+      console.log("res of tasks ::", res.data);
+      setFilterTasks(res.data);
+      setTasks(res.data);
+      console.log("loaded from back", res.data);
     } catch {
       console.log("Something went wrong during fetch tasks!");
     } finally {
@@ -55,9 +57,12 @@ const DashboardLayout = ({
     }
   };
 
+
+
   useEffect(() => {
     console.log("use Effect run for fetch tasks.....");
     fetchTasks();
+    // fetchDBTasks();
   }, []);
 
   const handleSuccess = () => {
@@ -105,7 +110,7 @@ const DashboardLayout = ({
 
     const filtered = tasks.filter((task) => {
       // Convert task.date string to Date
-      const taskDate = new Date(task.date);
+      const taskDate = new Date(task.created_at);
       const taskTime = taskDate.getTime();
       return taskTime >= fromTime && taskTime <= toTime;
     });
@@ -120,8 +125,8 @@ const DashboardLayout = ({
     filterTasksByDateRange(range);
   };
 
-  console.log("filterTasks", filterTasks);
-  console.log("tasks", tasks);
+  // console.log("filterTasks", filterTasks);
+  // console.log("tasks", tasks);
 
   return (
     <div className=" bg-white pt-6  min-h-screen w-full md:rounded-t-md md:px-4 lg:px-6 px-2">
@@ -206,7 +211,12 @@ const DashboardLayout = ({
 
       <div className=" bg-silver rounded-sm md:px-4 px-5 pt-6 grid lg:grid-cols-3 md:grid-cols-2 grid-cols-1 gap-4 pb-4">
         {/* Card */}
-        {showNewTaskCard && <NewTaskCard onSuccess={handleSuccess} />}
+        {showNewTaskCard && (
+          <NewTaskCard
+            handleTaskCard={setShowNewTaskCard}
+            onSuccess={handleSuccess}
+          />
+        )}
         {isLoading ? (
           Array.from({ length: 6 }).map((_, index) => (
             <div
@@ -218,12 +228,13 @@ const DashboardLayout = ({
               <Skeleton className="h-4 w-5/6" />
             </div>
           ))
-        ) : filterTasks.length > 0 ? (
+        ) : filterTasks?.length > 0 ? (
           filterTasks.map((task, index) => (
             <TaskCard
               key={index}
               editHandle={fetchTasks}
               onDelete={fetchTasks}
+              onCompleted={fetchTasks}
               data={task}
             />
           ))

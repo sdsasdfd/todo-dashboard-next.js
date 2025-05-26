@@ -10,20 +10,59 @@ import {
 import { Avatar, AvatarFallback, AvatarImage } from "../ui/avatar";
 import { useRouter } from "next/navigation";
 
-type User = {
-  name: string;
+import axios from "axios";
+import { toast } from "sonner";
+import { createClient } from "@/utils/supabase/client";
+
+interface User {
   email: string;
-};
+  full_name: string;
+}
+
 const ProfileDropDown = () => {
   const router = useRouter();
   const [user, setUser] = useState<User | null>(null);
-  useEffect(() => {
-    setUser(JSON.parse(localStorage.getItem("user") ?? "{}"));
-  }, []);
-  // console.log(user);
 
-  const handleLogout = () => {
-    localStorage.removeItem("user");
+  useEffect(() => {
+    const getUser = async () => {
+      const supabase = createClient();
+
+      const { data, error } = await supabase.auth.getUser();
+
+      if (error || !data?.user) {
+        console.log("user does not exist");
+      } else {
+        const { data: userData, error: userError } = await supabase
+          .from("users")
+          .select("*")
+          .eq("id", data.user.id)
+          .single();
+
+        if (userError) {
+          console.log("Error fetching user data: ", userError);
+        }
+        if (userData) {
+          setUser(userData);
+        }
+      }
+    };
+    getUser();
+  }, []);
+  console.log(user);
+
+  const handleLogout = async () => {
+    try {
+      const response = await axios.get("/api/logout");
+      if (response.status === 200) {
+        toast.success(response.data.message);
+        router.push("/login");
+        return console.log(response.data.message);
+      }
+    } catch (error) {
+      console.log("Failed to Logout", error);
+      toast.error("Failed to Logout");
+    }
+    // localStorage.removeItem("user");
     router.push("/signup");
     setUser(null);
   };
@@ -55,7 +94,7 @@ const ProfileDropDown = () => {
           </Avatar>
         </DropdownMenuItem>
         <DropdownMenuItem className=" font-medium text-lg hover:bg-transparent focus:bg-transparent flex items-center justify-center">
-          {user?.name}
+          {user?.full_name}
         </DropdownMenuItem>
         <DropdownMenuItem className=" text-medium-gray pb-2 hover:bg-transparent focus:bg-transparent flex items-center justify-center">
           {user?.email}

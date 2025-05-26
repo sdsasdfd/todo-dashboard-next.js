@@ -5,13 +5,16 @@ import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { Form, FormField } from "@/components/ui/form";
 import { Button } from "@/components/ui/button";
-
+import axios from "axios";
 import Image from "next/image";
 import Link from "next/link";
 import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 import { Input } from "../ui/input";
 import Logo from "../logo/Logo";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { Loader } from "lucide-react";
 
 const formSchema = z.object({
   email: z.string().email("Invalid Email"),
@@ -19,7 +22,9 @@ const formSchema = z.object({
 });
 
 const Login = () => {
+  const router = useRouter();
   const [showPassword, setShowPassword] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   const form = useForm({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -28,12 +33,29 @@ const Login = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async(values: z.infer<typeof formSchema>) => {
     console.log(values);
     try {
-      window.localStorage.setItem("user", JSON.stringify(values));
+       setIsLoading(true);
+      const response = await axios.post("/api/login", values);
+      console.log("res of login ::", response.data);
+      const data = response.data;
+      if (response.status === 200) {
+        toast.success(data.message);
+        form.reset();
+        router.push("/");
+        setIsLoading(false);
+        return console.log(data.message);
+      } else {
+        return toast.error(data.message);
+        // return console.error("Login failed:", data.message);
+      }
+      // window.localStorage.setItem("user", JSON.stringify(values));
     } catch (error) {
       console.log("error", error);
+      toast.error("Login failed");
+    } finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -108,11 +130,12 @@ const Login = () => {
             />
 
             {/* Submit Button */}
-            <Button
+             <Button
+              disabled={isLoading}
               type="submit"
               className="w-full cursor-pointer bg-dark-blue text-[17px] hover:bg-medium-blue mb-5"
             >
-              Login
+              {isLoading ? <Loader className="animate-spin" /> : ""} Login
             </Button>
 
             {/* Divider */}

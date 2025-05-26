@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 import { zodResolver } from "@hookform/resolvers/zod";
 import { useForm } from "react-hook-form";
 import { z } from "zod";
@@ -15,6 +15,8 @@ import {
 } from "@/components/ui/form";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "../ui/textarea";
+import axios from "axios";
+import { Loader } from "lucide-react";
 
 const formSchema = z.object({
   title: z.string().min(4, {
@@ -25,18 +27,21 @@ const formSchema = z.object({
   }),
 });
 
-type Task = {
-  id: number;
-  title: string;
-  description: string;
-  date: number;
-};
+// type Task = {
+//   id: number;
+//   title: string;
+//   description: string;
+//   created_at: number;
+//   is_completed: boolean;
+// };
 
 interface Props {
   onSuccess: () => void;
+  handleTaskCard: (show: boolean) => void;
 }
 
-const NewTaskCard: React.FC<Props> = ({ onSuccess }) => {
+const NewTaskCard: React.FC<Props> = ({ onSuccess, handleTaskCard }) => {
+   const [isLoading, setIsLoading] = useState(false);
   const form = useForm<z.infer<typeof formSchema>>({
     resolver: zodResolver(formSchema),
     defaultValues: {
@@ -45,26 +50,18 @@ const NewTaskCard: React.FC<Props> = ({ onSuccess }) => {
     },
   });
 
-  function onSubmit(values: z.infer<typeof formSchema>) {
+  async function onSubmit(values: z.infer<typeof formSchema>) {
     console.log(values);
-    let formattedTasks: Task[] = [];
-    const prevTasks = localStorage.getItem("tasks");
-    if (prevTasks) {
-      formattedTasks = JSON.parse(prevTasks);
-    }
-
-    const newTask = {
-      ...values,
-      id: Math.floor(Math.random() * 1000000),
-      date: Date.now(),
-    };
+   
 
     try {
-      localStorage.setItem(
-        "tasks",
-        JSON.stringify([...formattedTasks, newTask])
-      );
+      setIsLoading(true);
+      const res = await axios.post("/api/task", values);
+
       onSuccess();
+      setIsLoading(false);
+      return res.data;
+    
     } catch (error) {
       console.log(error);
     }
@@ -106,12 +103,21 @@ const NewTaskCard: React.FC<Props> = ({ onSuccess }) => {
               </FormItem>
             )}
           />
-          <Button
-            className=" bg-dark-blue hover:bg-medium-blue w-full mt-2"
-            type="submit"
-          >
-            Submit
-          </Button>
+          <div className="  grid grid-cols-1 md:grid-cols-2 md:gap-2  ">
+            <Button
+              disabled={isLoading}
+              className=" bg-dark-blue hover:bg-medium-blue mt-2 cursor-pointer"
+              type="submit"
+            >
+              {isLoading ? <Loader className="animate-spin" /> : ""} Submit
+            </Button>
+            <Button
+              className="cursor-pointer bg-silver hover:bg-silver text-black mt-2"
+              onClick={() => handleTaskCard(false)}
+            >
+              Cancel
+            </Button>
+          </div>
         </form>
       </Form>
     </div>

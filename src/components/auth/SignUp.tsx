@@ -12,7 +12,10 @@ import React, { useState } from "react";
 import { FaRegEye, FaRegEyeSlash } from "react-icons/fa6";
 import { Input } from "../ui/input";
 import Logo from "../logo/Logo";
-import { useRouter } from "next/navigation";
+
+import axios, { AxiosError } from "axios";
+import { toast } from "sonner";
+import { Loader } from "lucide-react";
 
 const formSchema = z.object({
   name: z.string().min(1, "Name is required"),
@@ -24,7 +27,7 @@ const formSchema = z.object({
 });
 
 const Signup = () => {
-  const router = useRouter();
+  const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const form = useForm({
     resolver: zodResolver(formSchema),
@@ -36,13 +39,37 @@ const Signup = () => {
     },
   });
 
-  const onSubmit = (values: z.infer<typeof formSchema>) => {
+  const onSubmit = async(values: z.infer<typeof formSchema>) => {
     console.log(values);
     try {
-      window.localStorage.setItem("user", JSON.stringify(values));
-      router.push("/");
-    } catch (error) {
-      console.log("error", error);
+      setIsLoading(true);
+       const res = await axios.post("/api/signup", values);
+      console.log("res of signup ::", res.data);
+      if (res.data.success) {
+        // User created successfully
+        // You could redirect or show a success message
+        toast.success(res.data.message);
+        form.reset();
+        return console.log(res.data.message);
+       
+      } else {
+        // Handle expected failure (like user already exists, validation issues)
+        toast.error(res.data.message);
+        return console.error("Signup failed:", res.data.message);
+      
+      }
+      
+    } catch (err) {
+       const error = err as AxiosError;
+
+      if (error.response) {
+        const message = (error.response.data as { message?: string }).message;
+        console.log(message || "Something went wrong. Please try again.");
+      } else {
+        console.log("Network or server error. Please try again later.");
+      }
+    }finally {
+      setIsLoading(false);
     }
   };
   return (
@@ -173,7 +200,7 @@ const Signup = () => {
               type="submit"
               className="w-full cursor-pointer bg-dark-blue text-[17px] hover:bg-medium-blue mb-5"
             >
-              Sign Up
+             {isLoading ? <Loader className="animate-spin" /> : ""} Sign Up
             </Button>
 
             {/* Divider */}
