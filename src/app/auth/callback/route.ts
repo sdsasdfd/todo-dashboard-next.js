@@ -11,33 +11,44 @@ export async function GET(request: Request) {
     // if "next" is not a relative URL, use the default
     next = "/";
   }
+  console.log("origin::", origin)
 
   if (code) {
     const supabase = await createClient();
     const { error } = await supabase.auth.exchangeCodeForSession(code);
     if (!error) {
-      const { data, error: userError } = await supabase.auth.getUser();
+      const { data: userData, error: userError } = await supabase.auth.getUser();
       if (userError) {
         console.log("Error fetching user data: ", userError.message);
         return NextResponse.redirect(`${origin}/error`);
       }
-      const { data: existingUser } = await supabase
+      const user = userData.user
+      // console.log('user::', data)
+      const { data: existingUser, error:fetchError } = await supabase
         .from("users")
         .select("*")
-        .eq("email", data.user?.email)
-        .limit(1)
-        .single();
+        .eq("email", user?.email)
+        .maybeSingle();
+
+ if (fetchError) {
+    console.error("Error checking user existence: ", fetchError.message);
+    return NextResponse.redirect(`${origin}/error`);
+  }
       if (!existingUser) {
+        console.log('user not existed')
         const { error: dbError } = await supabase.from("users").insert({
-          email: data.user?.email,
-          full_name: data.user?.user_metadata.full_name,
-        });
+          email: user?.email,
+          full_name: user?.user_metadata.full_name,
+          status: 'active'
+        }) 
+      
 
         if (dbError) {
           console.log("Error inserting user data: ", dbError.message);
           return NextResponse.redirect(`${origin}/error`);
         }
-      }
+
+      } 
       const forwardedHost = request.headers.get("x-forwarded-host"); // original origin before load balancer
       const isLocalEnv = process.env.NODE_ENV === "development";
       if (isLocalEnv) {
